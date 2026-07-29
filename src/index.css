@@ -1,0 +1,387 @@
+/* ============================================================
+   AURAL · Panel de citas — sistema de diseño
+   Paleta: clínico + cálido, inspirado en audiogramas (líneas de sonido)
+   Display: Space Grotesk · Cuerpo: Inter · Datos: IBM Plex Mono
+   ============================================================ */
+
+:root {
+  --ink: #16232E;
+  --ink-soft: #4A5A68;
+  --bg: #F4F6F5;
+  --surface: #FFFFFF;
+  --border: #E1E7E6;
+
+  --brand: #1F6F78;
+  --brand-dark: #164F56;
+  --brand-tint: #E4F0EF;
+
+  --accent: #FF6B4A;
+  --accent-tint: #FFE9E2;
+
+  --ok: #4C956C;
+  --ok-tint: #E5F3EA;
+  --warn: #E8A33D;
+  --warn-tint: #FBF0DD;
+  --danger: #D64550;
+  --danger-tint: #FBE7E8;
+  --neutral: #8B8FA3;
+  --neutral-tint: #ECEDF2;
+
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 1px 2px rgba(22,35,46,0.06), 0 4px 16px rgba(22,35,46,0.05);
+
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ---------- Layout ---------- */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+@media (max-width: 860px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+}
+
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--brand-dark);
+}
+
+.sede-list { display: flex; flex-direction: column; gap: 2px; }
+
+.sede-item {
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sede-item:hover { background: var(--bg); }
+.sede-item.active { background: var(--brand-tint); color: var(--brand-dark); }
+
+.sede-item .count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.logout-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  width: 100%;
+  margin-top: 8px;
+}
+.logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ---------- Main ---------- */
+
+.main {
+  padding: 28px 32px 60px;
+  max-width: 1100px;
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 22px;
+}
+
+.page-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+
+.page-header p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.94rem;
+}
+
+/* Signature waveform divider */
+.waveform-divider {
+  width: 100%;
+  height: 22px;
+  margin: 14px 0 22px;
+  overflow: hidden;
+}
+.waveform-divider svg { display: block; }
+
+/* ---------- Filters ---------- */
+
+.filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.filters-bar select,
+.filters-bar input[type="date"] {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--ink);
+  font-size: 0.88rem;
+}
+
+.filters-bar .spacer { flex: 1; }
+
+.btn-primary {
+  background: var(--brand);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary:hover { background: var(--brand-dark); }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+.btn-secondary:hover { border-color: var(--brand); color: var(--brand-dark); }
+
+/* ---------- Citas list ---------- */
+
+.day-group { margin-bottom: 26px; }
+
+.day-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.cita-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 68px 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+
+@media (max-width: 640px) {
+  .cita-card { grid-template-columns: 1fr; gap: 8px; }
+}
+
+.cita-hora {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--brand-dark);
+  font-size: 0.95rem;
+}
+
+.cita-info .paciente {
+  font-weight: 600;
+  font-size: 0.96rem;
+}
+.cita-info .detalle {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.status-badge {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  justify-self: start;
+}
+.status-pendiente { background: var(--warn-tint); color: #8A6116; }
+.status-confirmada { background: var(--brand-tint); color: var(--brand-dark); }
+.status-cancelada { background: var(--danger-tint); color: #9A2E37; }
+.status-completada { background: var(--ok-tint); color: #2E6B47; }
+.status-no_asistio { background: var(--neutral-tint); color: #5B5F72; }
+
+.cita-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.icon-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 6px 9px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.icon-btn:hover { border-color: var(--brand); color: var(--brand-dark); }
+.icon-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ink-soft);
+}
+.empty-state .waveform-divider { margin: 0 auto 16px; width: 140px; opacity: 0.5; }
+
+/* ---------- Modal ---------- */
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(22,35,46,0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  z-index: 50;
+}
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(22,35,46,0.25);
+}
+
+.modal h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin: 0 0 18px;
+}
+
+.form-row { margin-bottom: 14px; }
+.form-row label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 5px;
+}
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: var(--ink);
+}
+.form-row textarea { resize: vertical; min-height: 60px; }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.error-text { color: var(--danger); font-size: 0.85rem; margin-top: 8px; }
+
+/* ---------- Login ---------- */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.login-card h1 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 14px 0 4px;
+}
+.login-card p { color: var(--ink-soft); margin: 0 0 22px; font-size: 0.9rem; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

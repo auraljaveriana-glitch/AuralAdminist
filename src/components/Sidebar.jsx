@@ -1,5 +1,4 @@
 import { supabase } from '../supabaseClient'
-import Waveform from './Waveform'
 
 export default function Sidebar({ sedes, sedeActivaId, onSelectSede, conteosPorSede, userEmail }) {
   async function handleLogout() {
@@ -9,8 +8,7 @@ export default function Sidebar({ sedes, sedeActivaId, onSelectSede, conteosPorS
   return (
     <aside className="sidebar">
       <div className="brand-mark">
-        <Waveform width={34} height={18} />
-        Aural
+        <img src="/logo-aural.png" alt="Aural" style={{ height: 22 }} />
       </div>
 
       <div>

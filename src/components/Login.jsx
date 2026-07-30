@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
-import Waveform from './Waveform'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -20,7 +19,7 @@ export default function Login() {
   return (
     <div className="login-screen">
       <div className="login-card">
-        <Waveform width={140} height={20} />
+        <img src="/logo-aural.png" alt="Aural Centros Auditivos" style={{ height: 40, marginBottom: 8 }} />
         <h1>Aural · Panel de citas</h1>
         <p>Ingresa con tu cuenta de equipo para ver y gestionar las citas.</p>
         <form onSubmit={handleSubmit}>

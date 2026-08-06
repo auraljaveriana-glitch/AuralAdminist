@@ -6,6 +6,7 @@ import FiltersBar from './components/FiltersBar'
 import CitasList from './components/CitasList'
 import CitaModal from './components/CitaModal'
 import HorariosEditor from './components/HorariosEditor'
+import CalendarioHorarios from './components/CalendarioHorarios'
 import Waveform from './components/Waveform'
 
 const HOY = new Date().toISOString().slice(0, 10)
@@ -209,6 +210,12 @@ export default function App() {
           >
             Horarios
           </button>
+          <button
+            className={vista === 'calendario' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setVista('calendario')}
+          >
+            Calendario (días específicos)
+          </button>
         </div>
 
         {vista === 'citas' && (
@@ -231,6 +238,12 @@ export default function App() {
 
         {vista === 'horarios' && (
           <HorariosEditor
+            audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
+          />
+        )}
+
+        {vista === 'calendario' && (
+          <CalendarioHorarios
             audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
           />
         )}

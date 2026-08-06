@@ -61,6 +61,9 @@ export default function CitasList({ citas, onEditar, onCambiarEstado }) {
                     {cita.audiologos?.nombre} · {cita.sedes?.nombre}
                     {cita.motivo_consulta ? ` · ${cita.motivo_consulta}` : ''}
                   </div>
+                  {cita.pacientes?.telefono && (
+                    <div className="detalle">📱 {cita.pacientes.telefono}</div>
+                  )}
                 </div>
 
                 <span className={`status-badge status-${cita.estado}`}>

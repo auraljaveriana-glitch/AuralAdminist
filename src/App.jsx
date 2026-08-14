@@ -5,8 +5,6 @@ import Sidebar from './components/Sidebar'
 import FiltersBar from './components/FiltersBar'
 import CitasList from './components/CitasList'
 import CitaModal from './components/CitaModal'
-import HorariosEditor from './components/HorariosEditor'
-import CalendarioHorarios from './components/CalendarioHorarios'
 import Waveform from './components/Waveform'
 
 const HOY = new Date().toISOString().slice(0, 10)
@@ -40,7 +38,6 @@ export default function App() {
 
   const [modalAbierto, setModalAbierto] = useState(false)
   const [citaEnEdicion, setCitaEnEdicion] = useState(null)
-  const [vista, setVista] = useState('citas') // 'citas' | 'horarios'
 
   // ---- Sesión ----
   useEffect(() => {
@@ -71,7 +68,7 @@ export default function App() {
 
     let query = supabase
       .from('citas')
-      .select('*, pacientes(nombre, telefono), audiologos(nombre, sede_id), sedes(nombre)')
+      .select('*, pacientes(nombre, telefono, documento), audiologos(nombre, sede_id), sedes(nombre)')
       .gte('fecha', filtros.desde)
       .lte('fecha', filtros.hasta)
       .order('fecha', { ascending: true })
@@ -193,59 +190,22 @@ export default function App() {
       <main className="main">
         <div className="page-header">
           <h1>{sedeActiva ? sedeActiva.nombre : 'Todas las sedes'}</h1>
-          <p>Gestiona las citas y los horarios de tu equipo de audiólogos.</p>
+          <p>Gestiona las citas de tu equipo de audiólogos.</p>
         </div>
         <div className="waveform-divider"><Waveform width={220} height={22} /></div>
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          <button
-            className={vista === 'citas' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setVista('citas')}
-          >
-            Citas
-          </button>
-          <button
-            className={vista === 'horarios' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setVista('horarios')}
-          >
-            Horarios
-          </button>
-          <button
-            className={vista === 'calendario' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setVista('calendario')}
-          >
-            Calendario (días específicos)
-          </button>
-        </div>
+        <FiltersBar
+          audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
+          filtros={filtros}
+          onChange={setFiltros}
+          onNuevaCita={abrirNuevaCita}
+        />
 
-        {vista === 'citas' && (
-          <>
-            <FiltersBar
-              audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
-              filtros={filtros}
-              onChange={setFiltros}
-              onNuevaCita={abrirNuevaCita}
-            />
-
-            {errorCarga && <p className="error-text">{errorCarga}</p>}
-            {cargandoCitas ? (
-              <p style={{ color: 'var(--ink-soft)' }}>Cargando citas…</p>
-            ) : (
-              <CitasList citas={citas} onEditar={abrirEdicion} onCambiarEstado={cambiarEstado} />
-            )}
-          </>
-        )}
-
-        {vista === 'horarios' && (
-          <HorariosEditor
-            audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
-          />
-        )}
-
-        {vista === 'calendario' && (
-          <CalendarioHorarios
-            audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
-          />
+        {errorCarga && <p className="error-text">{errorCarga}</p>}
+        {cargandoCitas ? (
+          <p style={{ color: 'var(--ink-soft)' }}>Cargando citas…</p>
+        ) : (
+          <CitasList citas={citas} onEditar={abrirEdicion} onCambiarEstado={cambiarEstado} />
         )}
       </main>
 

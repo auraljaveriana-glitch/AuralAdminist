@@ -1,5 +1,4 @@
 import Waveform from './Waveform'
-
 const ETIQUETAS_ESTADO = {
   pendiente: 'Pendiente',
   confirmada: 'Confirmada',
@@ -7,7 +6,6 @@ const ETIQUETAS_ESTADO = {
   completada: 'Completada',
   no_asistio: 'No asistió',
 }
-
 function formatearFechaGrupo(fechaStr) {
   const fecha = new Date(fechaStr + 'T00:00:00')
   return fecha.toLocaleDateString('es-CO', {
@@ -16,7 +14,6 @@ function formatearFechaGrupo(fechaStr) {
     month: 'long',
   })
 }
-
 function formatearHora(horaStr) {
   // horaStr viene como "08:30:00"
   const [h, m] = horaStr.split(':')
@@ -25,7 +22,6 @@ function formatearHora(horaStr) {
   const hora12 = hora % 12 === 0 ? 12 : hora % 12
   return `${hora12}:${m} ${ampm}`
 }
-
 export default function CitasList({ citas, onEditar, onCambiarEstado }) {
   if (citas.length === 0) {
     return (
@@ -35,15 +31,12 @@ export default function CitasList({ citas, onEditar, onCambiarEstado }) {
       </div>
     )
   }
-
   // Agrupar por fecha
   const grupos = citas.reduce((acc, cita) => {
     (acc[cita.fecha] ||= []).push(cita)
     return acc
   }, {})
-
   const fechasOrdenadas = Object.keys(grupos).sort()
-
   return (
     <div>
       {fechasOrdenadas.map((fecha) => (
@@ -54,22 +47,23 @@ export default function CitasList({ citas, onEditar, onCambiarEstado }) {
             .map((cita) => (
               <div className="cita-card" key={cita.id}>
                 <div className="cita-hora">{formatearHora(cita.hora_inicio)}</div>
-
                 <div className="cita-info">
                   <div className="paciente">{cita.pacientes?.nombre || 'Paciente'}</div>
                   <div className="detalle">
                     {cita.audiologos?.nombre} · {cita.sedes?.nombre}
                     {cita.motivo_consulta ? ` · ${cita.motivo_consulta}` : ''}
                   </div>
-                  {cita.pacientes?.telefono && (
-                    <div className="detalle">📱 {cita.pacientes.telefono}</div>
+                  {(cita.pacientes?.telefono || cita.pacientes?.documento) && (
+                    <div className="detalle">
+                      {cita.pacientes?.telefono && <>📱 {cita.pacientes.telefono}</>}
+                      {cita.pacientes?.telefono && cita.pacientes?.documento && ' · '}
+                      {cita.pacientes?.documento && <>CC {cita.pacientes.documento}</>}
+                    </div>
                   )}
                 </div>
-
                 <span className={`status-badge status-${cita.estado}`}>
                   {ETIQUETAS_ESTADO[cita.estado]}
                 </span>
-
                 <div className="cita-actions">
                   {cita.estado === 'pendiente' && (
                     <button className="icon-btn" onClick={() => onCambiarEstado(cita, 'confirmada')}>

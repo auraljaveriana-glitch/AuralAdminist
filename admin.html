@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aural · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F5F0;--surface:#fff;--s2:#F2EFE9;
+  --border:#E2DDD5;--border2:#CEC8BE;
+  --text:#1A1714;--muted:#7A7268;
+  --accent:#1A6B4A;--a2:#E8F2ED;
+  --danger:#B83232;--warn:#9B7A3F;
+  --shadow:0 2px 12px rgba(26,23,20,.07);--r:4px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-weight:300;-webkit-font-smoothing:antialiased;}
+button{font-family:inherit;cursor:pointer;}input,select{font-family:inherit;}
+
+/* Lock */
+#lock{position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;}
+.ll{font-family:'Playfair Display',serif;font-size:26px;letter-spacing:.04em;display:flex;align-items:center;gap:9px;}
+.ld{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.lc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:30px 34px;width:310px;box-shadow:var(--shadow);}
+.lc h2{font-family:'Playfair Display',serif;font-size:19px;font-weight:400;margin-bottom:4px;}
+.lc p{font-size:12px;color:var(--muted);margin-bottom:20px;}
+.lc input{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 13px;font-size:14px;color:var(--text);outline:none;margin-bottom:10px;}
+.lc input:focus{border-color:var(--accent);}
+.lc button{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:500;}
+.lc button:hover{background:#155a3d;}
+.lerr{font-size:12px;color:var(--danger);margin-top:7px;display:none;}
+
+/* App */
+#app{display:none;min-height:100vh;}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:206px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;}
+.sbl{padding:19px 17px;font-family:'Playfair Display',serif;font-size:17px;letter-spacing:.04em;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sbd{width:7px;height:7px;border-radius:50%;background:var(--accent);}
+.sb-sub{font-family:'Inter',sans-serif;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-top:1px;}
+nav{padding:10px 0;flex:1;}
+.ni{display:flex;align-items:center;gap:9px;padding:10px 17px;cursor:pointer;font-size:13px;color:var(--muted);border-left:2px solid transparent;transition:all .2s;}
+.ni:hover{color:var(--text);background:var(--bg);}
+.ni.on{color:var(--accent);border-left-color:var(--accent);background:var(--a2);}
+.ni .ico{font-size:14px;width:17px;text-align:center;}
+.sb-foot{padding:13px 17px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
+.content{margin-left:206px;padding:26px 30px 80px;}
+.panel{display:none;}.panel.on{display:block;}
+.pg-lbl{font-size:10px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.pg-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:400;margin-bottom:22px;}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-bottom:22px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px 17px;}
+.stn{font-family:'Playfair Display',serif;font-size:36px;font-weight:400;color:var(--accent);line-height:1;}
+.stl{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
+/* Filters */
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.fi{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:8px 11px;font-size:13px;color:var(--text);outline:none;cursor:pointer;}
+.fi:focus{border-color:var(--accent);}
+.fbtn{background:transparent;border:1.5px solid var(--border);border-radius:var(--r);padding:8px 13px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;}
+.fbtn:hover{color:var(--text);border-color:var(--border2);}
+
+/* Table */
+.tw{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:auto;box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;min-width:820px;}
+thead th{padding:10px 12px;text-align:left;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--s2);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--bg);}
+td{padding:11px 12px;font-size:13px;}
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+.bp{background:rgba(155,122,63,.12);color:var(--warn);}
+.bc{background:var(--a2);color:var(--accent);}
+.bx{background:rgba(184,50,50,.10);color:var(--danger);}
+.acts{display:flex;gap:4px;}
+.ab{padding:4px 8px;border-radius:2px;cursor:pointer;font-size:11px;font-weight:500;border:1.5px solid;transition:all .15s;white-space:nowrap;}
+.ab-ok{border-color:var(--accent);color:var(--accent);}.ab-ok:hover{background:var(--a2);}
+.ab-no{border-color:var(--danger);color:var(--danger);}.ab-no:hover{background:rgba(184,50,50,.07);}
+.ab-del{border-color:var(--border2);color:var(--muted);}.ab-del:hover{border-color:var(--danger);color:var(--danger);}
+.ab-note{border-color:var(--border);color:var(--muted);}.ab-note:hover{border-color:var(--border2);}
+.empty{padding:52px;text-align:center;color:var(--muted);}
+.ei{font-size:30px;margin-bottom:8px;opacity:.4;}
+
+/* Config */
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px 26px;margin-bottom:18px;box-shadow:var(--shadow);}
+.cc h3{font-family:'Playfair Display',serif;font-size:17px;font-weight:400;margin-bottom:5px;}
+.cc p{font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:14px;}
+.cc code{background:var(--bg);padding:2px 6px;border-radius:2px;font-family:monospace;font-size:12px;color:var(--accent);}
+.cc a{color:var(--accent);text-decoration:none;}
+.cf{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px;}
+.cf.s1{grid-template-columns:1fr;}
+.cfl{display:flex;flex-direction:column;gap:5px;}
+.cfl label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.cfl input{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--text);outline:none;}
+.cfl input:focus{border-color:var(--accent);}
+
+/* Buttons */
+.btn{padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:500;border:1.5px solid transparent;transition:all .18s;cursor:pointer;}
+.bg{background:var(--accent);color:#fff;border-color:var(--accent);}.bg:hover{background:#155a3d;}
+.bgh{background:transparent;color:var(--muted);border-color:var(--border);}.bgh:hover{color:var(--text);border-color:var(--border2);}
+.br{background:transparent;color:var(--danger);border-color:var(--danger);}.br:hover{background:rgba(184,50,50,.07);}
+.tr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
+.tr-btns{display:flex;gap:7px;}
+
+/* Modal */
+.mbg{position:fixed;inset:0;background:rgba(26,23,20,.38);z-index:500;display:none;align-items:center;justify-content:center;}
+.mbg.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px 28px;max-width:440px;width:90%;box-shadow:var(--shadow);}
+.modal h3{font-family:'Playfair Display',serif;font-size:17px;margin-bottom:8px;}
+.modal p{font-size:13px;color:var(--muted);line-height:1.7;}
+
+/* Toast */
+.toast{position:fixed;bottom:18px;right:18px;z-index:9998;padding:10px 16px;border-radius:var(--r);font-size:13px;font-weight:400;opacity:0;transform:translateY(7px);transition:all .25s;pointer-events:none;box-shadow:var(--shadow);}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.ok{background:var(--accent);color:#fff;}
+.toast.err{background:var(--danger);color:#fff;}
+.toast.info{background:var(--text);color:#fff;}
+
+/* Loader */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(26,107,74,.3);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:5px;}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media(max-width:680px){.sidebar{width:100%;height:auto;position:relative;}.content{margin-left:0;padding:18px 14px 60px;}.cf{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOCK -->
+<div id="lock">
+  <div class="ll"><div class="ld"></div>Aural</div>
+  <div class="lc">
+    <h2>Panel administrativo</h2>
+    <p>Acceso restringido — solo equipo Aural</p>
+    <input type="password" id="pw" placeholder="Contraseña" onkeydown="if(event.key==='Enter')unlock()">
+    <button onclick="unlock()">Entrar</button>
+    <div class="lerr" id="lerr">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sbl"><div class="sbd"></div><div>Aural<span class="sb-sub">Admin</span></div></div>
+    <nav>
+      <div class="ni on" id="nav-citas" onclick="showP('citas',this)"><span class="ico">📋</span>Citas</div>
+      <div class="ni" id="nav-config" onclick="showP('config',this)"><span class="ico">⚙️</span>Configuración</div>
+    </nav>
+    <div class="ni" onclick="logout()" style="border-top:1px solid var(--border);color:var(--muted);cursor:pointer;padding:10px 17px;font-size:13px;display:flex;gap:9px;align-items:center;"><span class="ico">🔒</span>Cerrar sesión</div>
+    <div class="sb-foot" id="sb-cnt">—</div>
+  </div>
+
+  <div class="content">
+
+    <!-- CITAS -->
+    <div class="panel on" id="panel-citas">
+      <div class="tr">
+        <div><div class="pg-lbl">Gestión</div><div class="pg-title">Citas agendadas</div></div>
+        <div class="tr-btns">
+          <button class="btn bgh" onclick="loadCitas()">↻ Actualizar</button>
+          <button class="btn bg" onclick="exportCSV()">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="filters">
+        <select class="fi" id="fs" onchange="filterTable()"><option value="">Todas las sedes</option></select>
+        <select class="fi" id="fst" onchange="filterTable()">
+          <option value="">Todos los estados</option>
+          <option>Pendiente</option><option>Confirmada</option><option>Cancelada</option>
+        </select>
+        <input class="fi" type="date" id="fd" onchange="filterTable()">
+        <button class="fbtn" onclick="clearF()">Limpiar</button>
+      </div>
+      <div class="tw"><table>
+        <thead><tr><th>#</th><th>Paciente</th><th>Cédula</th><th>Sede</th><th>Fecha</th><th>Hora</th><th>Servicio</th><th>Contacto</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="panel" id="panel-config">
+      <div class="pg-lbl">Ajustes</div>
+      <div class="pg-title">Configuración</div>
+
+      <div class="cc">
+        <h3>🗄️ Supabase (base de datos)</h3>
+        <p>
+          Las claves de Supabase van en el archivo <code>config.js</code> que está dentro del ZIP.<br>
+          Si necesitas cambiarlas, edita ese archivo antes de subir a Netlify.<br><br>
+          <strong>URL actual:</strong> <code id="cfg-url-display">—</code>
+        </p>
+      </div>
+
+      <div class="cc">
+        <h3>🔗 Webhook n8n → WhatsApp</h3>
+        <p>
+          Cada cita nueva envía un POST a tu webhook de n8n con todos los datos del paciente.
+          Desde ahí conectas a Amanda para el aviso por WhatsApp.<br><br>
+          Variables disponibles: <code>paciente</code> · <code>telefono</code> · <code>sede</code> · <code>fecha</code> · <code>hora</code> · <code>servicio</code> · <code>notas</code>
+        </p>
+        <div class="cf s1">
+          <div class="cfl">
+            <label>URL del webhook (n8n)</label>
+            <input type="url" id="c-wh" placeholder="https://tu-n8n.app.n8n.cloud/webhook/aural-cita">
+          </div>
+        </div>
+        <button class="btn bg" onclick="saveCfg()">Guardar webhook</button>
+      </div>
+
+      <div class="cc">
+        <h3>🔐 Contraseña del panel</h3>
+        <p>Contraseña por defecto: <code>aural2024</code>. Cámbiala antes de compartir el archivo admin.</p>
+        <div class="cf">
+          <div class="cfl"><label>Nueva contraseña</label><input type="password" id="c-np" placeholder="Nueva contraseña"></div>
+          <div class="cfl"><label>Confirmar</label><input type="password" id="c-cp" placeholder="Repite la contraseña"></div>
+        </div>
+        <button class="btn bg" onclick="changePw()">Cambiar contraseña</button>
+      </div>
+
+      <div class="cc">
+        <h3>🗑️ Eliminar datos</h3>
+        <p>Elimina todos los agendamientos de la base de datos. <strong>No se puede deshacer.</strong></p>
+        <button class="btn br" onclick="clearAll()">Eliminar todos los agendamientos</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Notes modal -->
+<div class="mbg" id="modal">
+  <div class="modal">
+    <h3>Observaciones del paciente</h3>
+    <p id="modal-txt"></p>
+    <button class="btn bgh" style="margin-top:16px" onclick="document.getElementById('modal').classList.remove('open')">Cerrar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const DEFAULT_PW='aural2024';
+const SEDES=['Centenario','Tequendama','El Poblado','Bocagrande','Parque Washington','Usaquén','Javeriana','Plaza Central','Villa del Río','Nuestro Bogotá'];
+
+let allData=[];
+
+function unlock(){
+  const pw=document.getElementById('pw').value;
+  const stored=localStorage.getItem('aural_admin_pw')||DEFAULT_PW;
+  if(pw===stored){
+    document.getElementById('lock').style.display='none';
+    document.getElementById('app').style.display='block';
+    init();
+  } else {
+    document.getElementById('lerr').style.display='block';
+    document.getElementById('pw').value='';
+  }
+}
+function logout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('lock').style.display='flex';
+  document.getElementById('pw').value='';
+  document.getElementById('lerr').style.display='none';
+}
+
+function init(){
+  // Populate sede filter
+  const sf=document.getElementById('fs');
+  SEDES.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;sf.appendChild(o);});
+  // Show current supabase URL
+  document.getElementById('cfg-url-display').textContent=SUPABASE_URL;
+  // Load webhook
+  document.getElementById('c-wh').value=localStorage.getItem('aural_webhook')||'';
+  loadCitas();
+}
+
+async function loadCitas(){
+  document.getElementById('tbody').innerHTML='<tr><td colspan="10"><div class="empty"><span class="spin"></span> Cargando...</div></td></tr>';
+  try {
+    allData = await db.select();
+    renderStats();
+    filterTable();
+    document.getElementById('sb-cnt').textContent=allData.length+' citas en total';
+  } catch(e){
+    console.error(e);
+    document.getElementById('tbody').innerHTML=`<tr><td colspan="10"><div class="empty"><div class="ei">⚠️</div>Error al conectar con Supabase.<br>Revisa las claves en config.js</div></td></tr>`;
+    toast('Error de conexión con Supabase','err');
+  }
+}
+
+function showP(name,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+  el.classList.add('on');
+}
+
+function renderStats(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('stats').innerHTML=[
+    {n:allData.length,                                        l:'Total'},
+    {n:allData.filter(a=>a.status==='Pendiente').length,     l:'Pendientes'},
+    {n:allData.filter(a=>a.status==='Confirmada').length,    l:'Confirmadas'},
+    {n:allData.filter(a=>a.fecha===today).length,            l:'Hoy'},
+    {n:allData.filter(a=>a.status==='Cancelada').length,     l:'Canceladas'},
+  ].map(d=>`<div class="stat"><div class="stn">${d.n}</div><div class="stl">${d.l}</div></div>`).join('');
+}
+
+function filterTable(){
+  const fs=document.getElementById('fs').value;
+  const fst=document.getElementById('fst').value;
+  const fd=document.getElementById('fd').value;
+  let data=[...allData];
+  if(fs)  data=data.filter(a=>a.sede_nombre===fs);
+  if(fst) data=data.filter(a=>a.status===fst);
+  if(fd)  data=data.filter(a=>a.fecha===fd);
+  renderTable(data);
+}
+
+function renderTable(data){
+  if(!data) data=allData;
+  const tbody=document.getElementById('tbody');
+  if(!data.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty"><div class="ei">📋</div>No hay citas</div></td></tr>`;return;}
+  tbody.innerHTML=data.map((a,i)=>{
+    const bc=a.status==='Pendiente'?'bp':a.status==='Confirmada'?'bc':'bx';
+    return `<tr>
+      <td style="color:var(--muted);font-size:11px">${String(i+1).padStart(3,'0')}</td>
+      <td style="font-weight:500">${a.nombre}</td>
+      <td style="font-size:13px">${a.documento||'<span style="color:var(--muted)">—</span>'}</td>
+      <td><div>${a.sede_nombre}</div><div style="font-size:11px;color:var(--muted)">${a.sede_ciudad}</div></td>
+      <td style="white-space:nowrap">${fmtDate(a.fecha)}</td>
+      <td>${a.hora}</td>
+      <td style="font-size:12px">${a.servicio||'—'}</td>
+      <td><div style="font-size:12px">${a.email}</div><div style="font-size:11px;color:var(--muted)">${a.telefono}</div></td>
+      <td><span class="badge ${bc}">${a.status}</span></td>
+      <td><div class="acts">
+        ${a.status!=='Confirmada'?`<button class="ab ab-ok" onclick="upd('${a.id}','Confirmada')">✓</button>`:''}
+        ${a.status!=='Cancelada'?`<button class="ab ab-no" onclick="upd('${a.id}','Cancelada')">✕</button>`:''}
+        ${a.notas?`<button class="ab ab-note" onclick="showNote('${a.id}')">💬</button>`:''}
+        <button class="ab ab-del" onclick="del('${a.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function clearF(){['fs','fst','fd'].forEach(id=>document.getElementById(id).value='');filterTable();}
+
+async function upd(id,status){
+  try{
+    await db.update(id,{status});
+    const i=allData.findIndex(a=>a.id===id);
+    if(i!==-1) allData[i].status=status;
+    renderStats(); filterTable();
+    toast(`Marcada como ${status}`,'ok');
+  } catch(e){toast('Error al actualizar','err');console.error(e);}
+}
+
+async function del(id){
+  if(!confirm('¿Eliminar esta cita?')) return;
+  try{
+    await db.delete(id);
+    allData=allData.filter(a=>a.id!==id);
+    renderStats(); filterTable();
+    toast('Cita eliminada','info');
+  } catch(e){toast('Error al eliminar','err');console.error(e);}
+}
+
+function showNote(id){
+  const a=allData.find(a=>a.id===id);
+  if(!a) return;
+  document.getElementById('modal-txt').textContent=a.notas||'';
+  document.getElementById('modal').classList.add('open');
+}
+
+function exportCSV(){
+  if(!allData.length){toast('No hay citas para exportar','info');return;}
+  const h=['#','Nombre','Documento','Email','Teléfono','Sede','Ciudad','Fecha','Hora','Servicio','Observaciones','Estado','Registrado'];
+  const rows=allData.map((a,i)=>[
+    i+1,a.nombre,a.documento||'',a.email,a.telefono,
+    a.sede_nombre,a.sede_ciudad,a.fecha,a.hora,
+    a.servicio||'',(a.notas||'').replace(/,/g,' '),
+    a.status,a.created_at
+  ]);
+  const csv=[h,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const el=document.createElement('a');
+  el.href=url;el.download=`aural_citas_${new Date().toISOString().split('T')[0]}.csv`;
+  el.click();URL.revokeObjectURL(url);
+  toast('CSV exportado','ok');
+}
+
+async function clearAll(){
+  if(!confirm('¿Eliminar TODOS los agendamientos? No se puede deshacer.')) return;
+  try{
+    // Delete all rows
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}?id=not.is.null`,{
+      method:'DELETE',
+      headers:{apikey:SUPABASE_ANON,Authorization:`Bearer ${SUPABASE_ANON}`}
+    });
+    if(!r.ok) throw await r.json();
+    allData=[];renderStats();filterTable();
+    toast('Datos eliminados','info');
+  } catch(e){toast('Error al eliminar','err');console.error(e);}
+}
+
+function saveCfg(){
+  localStorage.setItem('aural_webhook',document.getElementById('c-wh').value.trim());
+  toast('Webhook guardado ✓','ok');
+}
+function changePw(){
+  const np=document.getElementById('c-np').value;
+  const cp=document.getElementById('c-cp').value;
+  if(!np){toast('Ingresa una contraseña','err');return;}
+  if(np!==cp){toast('Las contraseñas no coinciden','err');return;}
+  localStorage.setItem('aural_admin_pw',np);
+  document.getElementById('c-np').value='';document.getElementById('c-cp').value='';
+  toast('Contraseña actualizada ✓','ok');
+}
+
+function fmtDate(d){if(!d)return'';const[y,m,day]=d.split('-');const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];return`${parseInt(day)} ${M[parseInt(m)-1]} ${y}`;}
+let tt;
+function toast(msg,type='info'){const el=document.getElementById('toast');el.textContent=msg;el.className=`toast show ${type}`;clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),3000);}
+</script>
+</body>
+</html>

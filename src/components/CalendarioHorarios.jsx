@@ -19,25 +19,28 @@ export default function CalendarioHorarios({ audiologos }) {
   const [audiologoId, setAudiologoId] = useState('')
   const hoy = new Date()
   const [anio, setAnio] = useState(hoy.getFullYear())
-  const [mes, setMes] = useState(hoy.getMonth()) // 0-11
+  const [mes, setMes] = useState(hoy.getMonth())
 
   const [fechasConExcepcion, setFechasConExcepcion] = useState(new Set())
-  const [fechaSel, setFechaSel] = useState(null) // 'YYYY-MM-DD'
+  const [fechasBloqueadas, setFechasBloqueadas] = useState(new Set())
+  const [fechaSel, setFechaSel] = useState(null)
+  const [bloqueada, setBloqueada] = useState(false)
   const [bloques, setBloques] = useState([])
   const [cargandoMes, setCargandoMes] = useState(false)
   const [cargandoDia, setCargandoDia] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
 
-  // ---- Carga qué días del mes visible ya tienen una excepción ----
   useEffect(() => {
     if (!audiologoId) {
       setFechasConExcepcion(new Set())
+      setFechasBloqueadas(new Set())
       return
     }
     cargarExcepcionesDelMes()
     setFechaSel(null)
     setBloques([])
+    setBloqueada(false)
   }, [audiologoId, anio, mes])
 
   async function cargarExcepcionesDelMes() {
@@ -46,36 +49,56 @@ export default function CalendarioHorarios({ audiologos }) {
     const ultimoDia = new Date(anio, mes + 1, 0).getDate()
     const hasta = toISO(anio, mes, ultimoDia)
 
-    const { data, error } = await supabase
-      .from('horarios_fecha')
-      .select('fecha')
-      .eq('audiologo_id', audiologoId)
-      .gte('fecha', desde)
-      .lte('fecha', hasta)
+    const [{ data: excepciones }, { data: bloqueos }] = await Promise.all([
+      supabase
+        .from('horarios_fecha')
+        .select('fecha')
+        .eq('audiologo_id', audiologoId)
+        .gte('fecha', desde)
+        .lte('fecha', hasta),
+      supabase
+        .from('bloqueos')
+        .select('fecha')
+        .eq('audiologo_id', audiologoId)
+        .is('hora_inicio', null)
+        .gte('fecha', desde)
+        .lte('fecha', hasta),
+    ])
 
     setCargandoMes(false)
-    if (error) return
-    setFechasConExcepcion(new Set((data || []).map((f) => f.fecha)))
+    setFechasConExcepcion(new Set((excepciones || []).map((f) => f.fecha)))
+    setFechasBloqueadas(new Set((bloqueos || []).map((f) => f.fecha)))
   }
 
   async function elegirFecha(fechaISO) {
     setFechaSel(fechaISO)
     setMensaje('')
     setCargandoDia(true)
-    const { data, error } = await supabase
-      .from('horarios_fecha')
-      .select('*')
-      .eq('audiologo_id', audiologoId)
-      .eq('fecha', fechaISO)
-      .order('hora_inicio')
+
+    const [{ data: dataBloques, error: errBloques }, { data: dataBloqueo }] = await Promise.all([
+      supabase
+        .from('horarios_fecha')
+        .select('*')
+        .eq('audiologo_id', audiologoId)
+        .eq('fecha', fechaISO)
+        .order('hora_inicio'),
+      supabase
+        .from('bloqueos')
+        .select('id')
+        .eq('audiologo_id', audiologoId)
+        .eq('fecha', fechaISO)
+        .is('hora_inicio', null)
+        .maybeSingle(),
+    ])
 
     setCargandoDia(false)
-    if (error) {
+    if (errBloques) {
       setMensaje('No se pudo cargar ese día.')
       return
     }
+    setBloqueada(!!dataBloqueo)
     setBloques(
-      (data || []).map((f) => ({
+      (dataBloques || []).map((f) => ({
         key: f.id,
         hora_inicio: f.hora_inicio.slice(0, 5),
         hora_fin: f.hora_fin.slice(0, 5),
@@ -145,9 +168,43 @@ export default function CalendarioHorarios({ audiologos }) {
     await cargarExcepcionesDelMes()
   }
 
-  // ---- Construir la cuadrícula del calendario ----
+  async function bloquearDiaCompleto() {
+    setGuardando(true)
+    setMensaje('')
+    const { error } = await supabase
+      .from('bloqueos')
+      .insert({ audiologo_id: audiologoId, fecha: fechaSel, motivo: 'Bloqueado desde el panel' })
+    setGuardando(false)
+    if (error) {
+      setMensaje('No se pudo bloquear el día: ' + error.message)
+      return
+    }
+    setBloqueada(true)
+    setMensaje('Día bloqueado — no va a aparecer disponible para agendar ✓')
+    await cargarExcepcionesDelMes()
+  }
+
+  async function desbloquearDia() {
+    setGuardando(true)
+    setMensaje('')
+    const { error } = await supabase
+      .from('bloqueos')
+      .delete()
+      .eq('audiologo_id', audiologoId)
+      .eq('fecha', fechaSel)
+      .is('hora_inicio', null)
+    setGuardando(false)
+    if (error) {
+      setMensaje('No se pudo desbloquear: ' + error.message)
+      return
+    }
+    setBloqueada(false)
+    setMensaje('Día desbloqueado ✓')
+    await cargarExcepcionesDelMes()
+  }
+
   const celdas = useMemo(() => {
-    const primerDiaSemana = new Date(anio, mes, 1).getDay() // 0=domingo
+    const primerDiaSemana = new Date(anio, mes, 1).getDay()
     const totalDias = new Date(anio, mes + 1, 0).getDate()
     const arr = []
     for (let i = 0; i < primerDiaSemana; i++) arr.push(null)
@@ -185,7 +242,6 @@ export default function CalendarioHorarios({ audiologos }) {
 
       {audiologoId && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 380px) 1fr', gap: 24, alignItems: 'start' }}>
-          {/* Calendario */}
           <div className="panel-calendario" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 16, boxShadow: 'var(--shadow)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <button className="icon-btn" onClick={() => cambiarMes(-1)}>‹</button>
@@ -204,6 +260,7 @@ export default function CalendarioHorarios({ audiologos }) {
                 if (d === null) return <div key={`vacio-${i}`} />
                 const fechaISO = toISO(anio, mes, d)
                 const tieneExcepcion = fechasConExcepcion.has(fechaISO)
+                const estaBloqueada = fechasBloqueadas.has(fechaISO)
                 const esSeleccionado = fechaSel === fechaISO
                 const esHoy = fechaISO === hoyISO
                 return (
@@ -214,16 +271,23 @@ export default function CalendarioHorarios({ audiologos }) {
                       aspectRatio: '1',
                       border: esSeleccionado ? '2px solid var(--brand)' : esHoy ? '1.5px solid var(--ink-soft)' : '1px solid var(--border)',
                       borderRadius: 8,
-                      background: esSeleccionado ? 'var(--brand-tint)' : tieneExcepcion ? 'var(--accent-tint)' : 'var(--surface)',
-                      color: 'var(--ink)',
+                      background: esSeleccionado
+                        ? 'var(--brand-tint)'
+                        : estaBloqueada
+                        ? 'var(--danger-tint)'
+                        : tieneExcepcion
+                        ? 'var(--accent-tint)'
+                        : 'var(--surface)',
+                      color: estaBloqueada && !esSeleccionado ? '#9A2E37' : 'var(--ink)',
                       fontWeight: esSeleccionado ? 700 : 500,
                       fontSize: '0.85rem',
                       cursor: 'pointer',
                       position: 'relative',
+                      textDecoration: estaBloqueada ? 'line-through' : 'none',
                     }}
                   >
                     {d}
-                    {tieneExcepcion && (
+                    {tieneExcepcion && !estaBloqueada && (
                       <span style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', width: 5, height: 5, borderRadius: '50%', background: 'var(--accent)' }} />
                     )}
                   </button>
@@ -232,24 +296,25 @@ export default function CalendarioHorarios({ audiologos }) {
             </div>
 
             <p style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', marginTop: 12, marginBottom: 0 }}>
-              🟠 días con horario especial guardado. Los demás usan el horario semanal general.
+              🟠 horario especial guardado &nbsp;·&nbsp; 🔴 día bloqueado (cerrado)
             </p>
             {cargandoMes && <p style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>Cargando…</p>}
           </div>
 
-          {/* Editor del día elegido */}
           <div>
             {!fechaSel && <p style={{ color: 'var(--ink-soft)' }}>Haz click en un día del calendario para ver o editar su horario.</p>}
 
             {fechaSel && (
               <div className="cita-card" style={{ display: 'block' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                   <strong style={{ fontFamily: 'var(--font-display)', fontSize: '1rem' }}>
                     {new Date(fechaSel + 'T00:00:00').toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </strong>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="icon-btn" onClick={agregarBloque}>+ Bloque</button>
-                    {fechasConExcepcion.has(fechaSel) && (
+                    {!bloqueada && (
+                      <button className="icon-btn" onClick={agregarBloque}>+ Bloque</button>
+                    )}
+                    {!bloqueada && fechasConExcepcion.has(fechaSel) && (
                       <button className="icon-btn danger" onClick={quitarExcepcion} disabled={guardando}>
                         Quitar excepción
                       </button>
@@ -259,13 +324,24 @@ export default function CalendarioHorarios({ audiologos }) {
 
                 {cargandoDia && <p style={{ color: 'var(--ink-soft)' }}>Cargando…</p>}
 
-                {!cargandoDia && bloques.length === 0 && (
+                {!cargandoDia && bloqueada && (
+                  <div style={{ background: 'var(--danger-tint)', borderRadius: 'var(--radius)', padding: '14px 16px', marginBottom: 16 }}>
+                    <p style={{ margin: '0 0 10px', color: '#9A2E37', fontWeight: 600, fontSize: '0.9rem' }}>
+                      🔴 Este día está bloqueado — no aparece disponible para agendar.
+                    </p>
+                    <button className="btn-secondary" onClick={desbloquearDia} disabled={guardando}>
+                      {guardando ? <span className="spinner" /> : 'Desbloquear este día'}
+                    </button>
+                  </div>
+                )}
+
+                {!cargandoDia && !bloqueada && bloques.length === 0 && (
                   <p style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>
                     Sin horario especial este día — se está usando el horario semanal general. Agrega un bloque para crear una excepción.
                   </p>
                 )}
 
-                {!cargandoDia && (
+                {!cargandoDia && !bloqueada && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                     {bloques.map((b) => (
                       <div key={b.key} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -298,9 +374,16 @@ export default function CalendarioHorarios({ audiologos }) {
                   </div>
                 )}
 
-                <button className="btn-primary" onClick={guardarDia} disabled={guardando || cargandoDia}>
-                  {guardando ? <span className="spinner" /> : 'Guardar este día'}
-                </button>
+                {!bloqueada && (
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button className="btn-primary" onClick={guardarDia} disabled={guardando || cargandoDia}>
+                      {guardando ? <span className="spinner" /> : 'Guardar este día'}
+                    </button>
+                    <button className="btn-secondary" onClick={bloquearDiaCompleto} disabled={guardando || cargandoDia}>
+                      Bloquear día completo
+                    </button>
+                  </div>
+                )}
 
                 {mensaje && (
                   <p style={{ color: mensaje.startsWith('No') ? 'var(--danger)' : 'var(--ok)', fontSize: '0.85rem', marginTop: 10 }}>

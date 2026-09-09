@@ -5,6 +5,8 @@ import Sidebar from './components/Sidebar'
 import FiltersBar from './components/FiltersBar'
 import CitasList from './components/CitasList'
 import CitaModal from './components/CitaModal'
+import HorariosEditor from './components/HorariosEditor'
+import CalendarioHorarios from './components/CalendarioHorarios'
 import Waveform from './components/Waveform'
 
 const HOY = new Date().toISOString().slice(0, 10)
@@ -38,8 +40,8 @@ export default function App() {
 
   const [modalAbierto, setModalAbierto] = useState(false)
   const [citaEnEdicion, setCitaEnEdicion] = useState(null)
+  const [vista, setVista] = useState('citas')
 
-  // ---- Sesión ----
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
@@ -51,7 +53,6 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // ---- Catálogos (sedes, audiólogos) ----
   useEffect(() => {
     if (!session) return
     supabase.from('sedes').select('*').eq('activa', true).order('nombre')
@@ -60,7 +61,6 @@ export default function App() {
       .then(({ data, error }) => { if (!error) setAudiologos(data || []) })
   }, [session])
 
-  // ---- Citas (según filtros) ----
   const cargarCitas = useCallback(async () => {
     if (!session) return
     setCargandoCitas(true)
@@ -88,7 +88,6 @@ export default function App() {
 
   useEffect(() => { cargarCitas() }, [cargarCitas])
 
-  // Conteo de citas de hoy por sede (para la barra lateral)
   const [conteosPorSede, setConteosPorSede] = useState({})
   useEffect(() => {
     if (!session || sedes.length === 0) return
@@ -105,9 +104,7 @@ export default function App() {
       })
   }, [session, sedes, citas])
 
-  // ---- Crear / editar cita ----
   async function guardarCita(form, citaExistente) {
-    // 1. Buscar o crear el paciente por teléfono
     const { data: existente } = await supabase
       .from('pacientes')
       .select('id')
@@ -171,7 +168,6 @@ export default function App() {
     setModalAbierto(true)
   }
 
-  // ---- Render ----
   if (cargandoSesion) return null
   if (!session) return <Login />
 
@@ -190,22 +186,59 @@ export default function App() {
       <main className="main">
         <div className="page-header">
           <h1>{sedeActiva ? sedeActiva.nombre : 'Todas las sedes'}</h1>
-          <p>Gestiona las citas de tu equipo de audiólogos.</p>
+          <p>Gestiona las citas y los horarios de tu equipo de audiólogos.</p>
         </div>
         <div className="waveform-divider"><Waveform width={220} height={22} /></div>
 
-        <FiltersBar
-          audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
-          filtros={filtros}
-          onChange={setFiltros}
-          onNuevaCita={abrirNuevaCita}
-        />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <button
+            className={vista === 'citas' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setVista('citas')}
+          >
+            Citas
+          </button>
+          <button
+            className={vista === 'horarios' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setVista('horarios')}
+          >
+            Horarios
+          </button>
+          <button
+            className={vista === 'calendario' ? 'btn-primary' : 'btn-secondary'}
+            onClick={() => setVista('calendario')}
+          >
+            Calendario (días específicos)
+          </button>
+        </div>
 
-        {errorCarga && <p className="error-text">{errorCarga}</p>}
-        {cargandoCitas ? (
-          <p style={{ color: 'var(--ink-soft)' }}>Cargando citas…</p>
-        ) : (
-          <CitasList citas={citas} onEditar={abrirEdicion} onCambiarEstado={cambiarEstado} />
+        {vista === 'citas' && (
+          <>
+            <FiltersBar
+              audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
+              filtros={filtros}
+              onChange={setFiltros}
+              onNuevaCita={abrirNuevaCita}
+            />
+
+            {errorCarga && <p className="error-text">{errorCarga}</p>}
+            {cargandoCitas ? (
+              <p style={{ color: 'var(--ink-soft)' }}>Cargando citas…</p>
+            ) : (
+              <CitasList citas={citas} onEditar={abrirEdicion} onCambiarEstado={cambiarEstado} />
+            )}
+          </>
+        )}
+
+        {vista === 'horarios' && (
+          <HorariosEditor
+            audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
+          />
+        )}
+
+        {vista === 'calendario' && (
+          <CalendarioHorarios
+            audiologos={sedeActivaId ? audiologos.filter((a) => a.sede_id === sedeActivaId) : audiologos}
+          />
         )}
       </main>
 

@@ -17,7 +17,7 @@ function nuevoBloque() {
 
 export default function HorariosEditor({ audiologos }) {
   const [audiologoId, setAudiologoId] = useState('')
-  const [bloquesPorDia, setBloquesPorDia] = useState({}) // { 1: [bloque, bloque], 2: [...] }
+  const [bloquesPorDia, setBloquesPorDia] = useState({})
   const [cargando, setCargando] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
@@ -94,8 +94,6 @@ export default function HorariosEditor({ audiologos }) {
     setGuardando(true)
     setMensaje('')
 
-    // Reemplaza todo el horario de este audiólogo de una sola vez:
-    // borra lo que había y vuelve a insertar el estado actual.
     const { error: errBorrar } = await supabase
       .from('horarios_disponibles')
       .delete()
